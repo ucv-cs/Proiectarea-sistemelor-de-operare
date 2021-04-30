@@ -2,6 +2,7 @@
 Memory Allocation Simulator
 @version 1.1
 @author alin-c
+@link https://github.com/ucv-cs/Proiectarea-sistemelor-de-operare
 
 @usage
 py -i ma_sim.py [-ff | -bf | -wf]
@@ -142,7 +143,7 @@ class Memory:
 		i = 0
 		for i in range(len(self.content)):
 			if self.content[i].pid == pid:
-				# mark as free the first block with the given name
+				# mark as free the first block with the given pid
 				self.content[i].pid = "0"
 				self.content[i].process = False
 				break
