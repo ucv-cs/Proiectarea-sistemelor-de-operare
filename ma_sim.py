@@ -1,6 +1,6 @@
 """
 Memory Allocation Simulator
-@version 1.0
+@version 1.1
 @author alin-c
 
 @usage
@@ -11,14 +11,15 @@ where:
 	-bf = best_fit
 	-wf = worst_fit
 
-interaction (if run with -i) - at the console prompt enter:
+interaction (if run with -i):
+ - at the console prompt enter:
 	m+123
 		to add a process with the size 123
 	m-2
 		to remove the process with pid 2
 """
 import sys
-from colorama import init, Fore
+from colorama import init, Fore, Style
 
 init()
 _algorithm = "ff"
@@ -49,12 +50,10 @@ class Memory:
 	def add_block(self, size, algorithm="ff"):
 		"""
 		Adds a memory block with a given size and allocation algorithm.
-
-		param: size:
-		param: algorithm: valid options are:
-			ff = first_fit
-			bf = best_fit
-			wf = worst_fit
+			algorithm valid options are:
+				ff = first_fit
+				bf = best_fit
+				wf = worst_fit
 		"""
 		algorithm = self.algorithm
 		if algorithm == "bf":
@@ -168,9 +167,9 @@ class Memory:
 		"""
 		Prints the memory graphical representation and stats.
 		"""
-		red = Fore.RED
-		green = Fore.GREEN
-		black = Fore.BLACK
+		red = Fore.RED + Style.BRIGHT
+		green = Fore.GREEN + Style.BRIGHT
+		reset = Style.RESET_ALL
 		print(
 		    "0         10        20        30        40        50        60        70        80        90        100"
 		    "\n" + 10 * ("\u230a" + 9 * "_") + "\u230a")
@@ -182,7 +181,7 @@ class Memory:
 				s += green + size * chr(9611)
 			else:
 				s += red + size * chr(9611)
-		print(s + black)
+		print(s + reset)
 		print("\nMemory content:")
 		print("-----------------------------------")
 		print("block    pid       size     address")
@@ -195,7 +194,7 @@ class Memory:
 			    f"{color}{counter:5}    {str(pid):9} {i.size:4}   {i.address:9}"
 			)
 			counter += 1
-		print(black)
+		print(reset)
 
 
 if __name__ == "__main__":
