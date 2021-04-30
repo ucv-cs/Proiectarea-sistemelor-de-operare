@@ -4,14 +4,14 @@ Memory Allocation Simulator
 @author alin-c
 
 @usage
-py -i ma-sim.py [-ff | -bf | -wf]
+py -i ma_sim.py [-ff | -bf | -wf]
 
 where:
 	-ff = first_fit (default)
 	-bf = best_fit
 	-wf = worst_fit
 
-interaction: at the console prompt enter:
+interaction (if run with -i) - at the console prompt enter:
 	m+123
 		to add a process with the size 123
 	m-2
@@ -21,15 +21,13 @@ import sys
 from colorama import init, Fore
 
 init()
-_algorithm = "bf"
+_algorithm = "ff"
 
 
 class Memory:
 	"""
 	Represents the memory as a list of Blocks.
 	"""
-	global _algorithm
-
 	class Block:
 		"""
 		Represents the memory block.
@@ -41,34 +39,38 @@ class Memory:
 			self.process = process  # False = free space
 
 	def __init__(self, capacity=1000):
+		global _algorithm
+		self.algorithm = _algorithm
 		self.capacity = capacity
 		self.content = [Memory.Block("0", self.capacity, 0, False)]
 		self.counter = 0
 		self.print_memory()
 
-	def add_block(self, size, algorithm=_algorithm):
+	def add_block(self, size, algorithm="ff"):
 		"""
 		Adds a memory block with a given size and allocation algorithm.
 
 		param: size:
 		param: algorithm: valid options are:
-		ff = first_fit,
-		bf = best_fit,
-		wf = worst_fit,
-		nf = next_fit TBD
+			ff = first_fit
+			bf = best_fit
+			wf = worst_fit
 		"""
-		if algorithm == "ff":
-			self._ff(size)
-		elif algorithm == "bf":
+		algorithm = self.algorithm
+		if algorithm == "bf":
 			self._bf(size)
 		elif algorithm == "wf":
 			self._wf(size)
-		# elif algorithm == "nf":
-		# 	self._nf(size)
+		else:  # ff, default
+			self._ff(size)
 		self.counter += 1
 		self.print_memory()
 
 	def _ff(self, size):
+		"""
+		First fit allocation: finds the first block of free space with a size
+		greater or equal than the input size and then allocates the new process.
+		"""
 		pid = self.counter
 		for b in self.content:
 			if b.process is False and b.size >= size:
@@ -82,6 +84,10 @@ class Memory:
 				break
 
 	def _bf(self, size):
+		"""
+		Best fit allocation: finds the smallest block of free space with a size
+		greater or equal than the input size and then allocates the new process.
+		"""
 		candidates = dict()
 		pid = self.counter
 		# scan the memory and make a dictionary (index : size) of candidate blocks
@@ -93,8 +99,7 @@ class Memory:
 			return
 		# find the index of the minimal value in the dictionary
 		# i.e. the best fit block
-		min_size = min(candidates.values())
-		i = [k for k in candidates if candidates[k] == min_size][0]
+		i = min(candidates, key=candidates.get)
 		# split the block into a process and the rest of free space
 		if self.content[i].size > size:
 			self.content.insert(
@@ -105,6 +110,10 @@ class Memory:
 		 self.content[i].process) = (pid, size, True)
 
 	def _wf(self, size):
+		"""
+		Worst fit allocation: finds the largest block of free space with a size
+		greater or equal than the input size and then allocates the new process.
+		"""
 		candidates = dict()
 		pid = self.counter
 		# scan the memory and make a dictionary (index: size) of candidate blocks
@@ -116,15 +125,15 @@ class Memory:
 			return
 		# find the index of the maximal value in the dictionary
 		# i.e. the worst fit block
-		max_size = max(candidates.values())
-		i = [k for k in candidates if candidates[k] == max_size][0]
+		i = max(candidates, key=candidates.get)
 		# split the block into a process and the rest of free space
 		if self.content[i].size > size:
 			self.content.insert(
 			    i + 1,
 			    Memory.Block("0", self.content[i].size - size,
 			                 self.content[i].address + size, False))
-		(i.pid, i.size, i.process) = (pid, size, True)
+		(self.content[i].pid, self.content[i].size,
+		 self.content[i].process) = (pid, size, True)
 
 	def remove_block(self, pid):
 		"""
@@ -205,10 +214,13 @@ if __name__ == "__main__":
 	p = m.print_memory
 
 	# scripted operations
-	m + 250  # pid 0
-	m + 530  # pid 1
-	m + 140  # pid 2
-	m - 0  # remove pid 0
-	m + 125  # pid 3
+	m + 120  # add pid 0
+	m + 130  # add pid 1
+	m + 150  # add pid 2
+	m + 190  # add pid 3
+	m + 110  # add pid 4
+	m + 140  # add pid 5
+	m + 50  # add pid 6
 	m - 1  # remove pid 1
 	m - 3  # remove pid 3
+	m - 5  # remove pid 5
