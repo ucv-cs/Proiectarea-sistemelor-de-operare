@@ -1,6 +1,6 @@
 """
 Memory Allocation Simulator
-@version 1.1
+@version 1.2
 @author alin-c
 @link https://github.com/ucv-cs/Proiectarea-sistemelor-de-operare
 
@@ -18,6 +18,10 @@ interaction (if run with -i):
 		to add a process with the size 123
 	m-2
 		to remove the process with pid 2
+
+ - to change the algorithm in interactive mode, type:
+	m.algorithm = "bf"
+		(or "wf" or back to "ff"...)
 """
 import sys
 from colorama import init, Fore, Style
@@ -40,15 +44,17 @@ class Memory:
 			self.address = address  # starting address
 			self.process = process  # False = free space
 
+	global _algorithm
+
 	def __init__(self, capacity=1000):
-		global _algorithm
+
 		self.algorithm = _algorithm
 		self.capacity = capacity
 		self.content = [Memory.Block("0", self.capacity, 0, False)]
 		self.counter = 0
 		self.print_memory()
 
-	def add_block(self, size, algorithm="ff"):
+	def add_block(self, size, algorithm=_algorithm):
 		"""
 		Adds a memory block with a given size and allocation algorithm.
 			algorithm valid options are:
@@ -171,10 +177,12 @@ class Memory:
 		red = Fore.RED + Style.BRIGHT
 		green = Fore.GREEN + Style.BRIGHT
 		reset = Style.RESET_ALL
+		margin = "\t"
+		# graph
 		print(
-		    "0         10        20        30        40        50        60        70        80        90        100"
-		    "\n" + 10 * ("\u230a" + 9 * "_") + "\u230a")
-		s = ""
+		    f"{margin}0         10        20        30        40        50        60        70        80        90        100"
+		    f"\n{margin}" + 10 * ("\u230a" + 9 * "_") + "\u230a")
+		s = margin
 		for i in self.content:
 			# this size isn't precise because the character width is discrete
 			size = round(i.size * 100 / self.capacity)
@@ -183,16 +191,21 @@ class Memory:
 			else:
 				s += red + size * chr(9611)
 		print(s + reset)
-		print("\nMemory content:")
-		print("-----------------------------------")
-		print("block    pid       size     address")
-		print("-----------------------------------")
-		counter = 0
+		# stats
+		width = len(str(self.capacity))
+		header = "block    pid" + ' ' * (width - 1) + "size" + ' ' * (
+		    width - 1) + "address"
+		separator = f"{margin}{'-' * len(header)}"
+		print(f"\n{margin}Memory content:")
+		print(separator)
+		print(f"{margin}{header}")
+		print(separator)
+		counter = 1
 		for i in self.content:
 			pid = i.pid if i.process is True else "free"
 			color = green if pid == "free" else red
 			print(
-			    f"{color}{counter:5}    {str(pid):9} {i.size:4}   {i.address:9}"
+			    f"{margin}{color}{counter:5}   {str(pid): >4}   {i.size: >{width}}{i.address: >{6 + width}}"
 			)
 			counter += 1
 		print(reset)
