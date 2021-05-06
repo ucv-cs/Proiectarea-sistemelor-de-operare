@@ -52,6 +52,7 @@ class Memory:
 		self.capacity = capacity
 		self.content = [Memory.Block("0", self.capacity, 0, False)]
 		self.counter = 0
+		self.fail_counter = 0
 		self.print_memory()
 
 	def add_block(self, size, algorithm=_algorithm):
@@ -87,7 +88,8 @@ class Memory:
 					    Memory.Block("0", b.size - size, b.address + size,
 					                 False))
 				(b.pid, b.size, b.process) = (pid, size, True)
-				break
+				return
+		self.fail_counter += 1
 
 	def _bf(self, size):
 		"""
@@ -102,6 +104,7 @@ class Memory:
 				candidates[self.content.index(b)] = b.size
 		# no candidates means no best fit block
 		if len(candidates) == 0:
+			self.fail_counter += 1
 			return
 		# find the index of the minimal value in the dictionary
 		# i.e. the best fit block
@@ -126,8 +129,9 @@ class Memory:
 		for b in self.content:
 			if b.process is False and b.size >= size:
 				candidates[self.content.index(b)] = b.size
-		# no candidates means no best fit block
+		# no candidates means no worst fit block
 		if len(candidates) == 0:
+			self.fail_counter += 1
 			return
 		# find the index of the maximal value in the dictionary
 		# i.e. the worst fit block
@@ -208,7 +212,8 @@ class Memory:
 			    f"{margin}{color}{counter:5}   {str(pid): >4}   {i.size: >{width}}{i.address: >{6 + width}}"
 			)
 			counter += 1
-		print(reset)
+		success_rate = "\n" if self.counter == 0 else f"Allocation success rate: {(self.counter - self.fail_counter) / self.counter:.2f}\n"
+		print(reset + margin + success_rate)
 
 
 if __name__ == "__main__":
@@ -220,11 +225,6 @@ if __name__ == "__main__":
 		_algorithm = "wf"
 
 	m = Memory()
-
-	#aliases for the lazy
-	a = m.add_block
-	r = m.remove_block
-	p = m.print_memory
 
 	# scripted operations
 	m + 120  # add pid 0
