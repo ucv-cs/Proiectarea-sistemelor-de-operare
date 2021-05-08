@@ -9,11 +9,11 @@ import random as R
 
 # init()
 
-experiment_count = 10
-process_count = 20
+experiment_count = 1
+process_count = 5
 memory_size = 1000
-process_proportion = 0.1
-prints = False
+process_proportion = 0.5
+prints = True
 separator = "\n=========================="
 
 
@@ -30,7 +30,10 @@ def runner():
 	    for s in range(process_count)
 	]
 	# pids to be removed
-	pids = [R.randrange(0, process_count) for s in range(process_count // 2)]
+	pids = [
+	    R.randrange(0, process_count)
+	    for s in range(1, R.randrange(1, process_count))
+	]
 	# new random sizes for processes
 	final_sizes = [
 	    R.randrange(1, int(process_proportion * memory_size))
@@ -102,7 +105,7 @@ def print_stats(data):
 
 results = []
 for i in range(1, experiment_count + 1):
-	print("Iteration #", i, separator)
+	print("Experiment #", i, separator)
 	results.append(runner())
 
 print_stats(results)
