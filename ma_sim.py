@@ -46,13 +46,14 @@ class Memory:
 
 	global _algorithm
 
-	def __init__(self, capacity=1000):
+	def __init__(self, capacity=1000, prints=True):
 
 		self.algorithm = _algorithm
 		self.capacity = capacity
 		self.content = [Memory.Block("0", self.capacity, 0, False)]
 		self.counter = 0
 		self.fail_counter = 0
+		self.print = prints
 		self.print_memory()
 
 	def add_block(self, size, algorithm=_algorithm):
@@ -178,6 +179,9 @@ class Memory:
 		"""
 		Prints the memory graphical representation and stats.
 		"""
+		if self.print is False:
+			return
+
 		red = Fore.RED + Style.BRIGHT
 		green = Fore.GREEN + Style.BRIGHT
 		reset = Style.RESET_ALL
