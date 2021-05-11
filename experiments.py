@@ -9,11 +9,11 @@ import random as R
 
 # init()
 
-experiment_count = 1
-process_count = 5
+experiment_count = 100
+process_count = 10
 memory_size = 1000
-process_proportion = 0.5
-prints = True
+process_proportion = 0.2
+prints = False
 separator = "\n=========================="
 
 
@@ -30,10 +30,14 @@ def runner():
 	    for s in range(process_count)
 	]
 	# pids to be removed
-	pids = [
-	    R.randrange(0, process_count)
-	    for s in range(1, R.randrange(1, process_count))
-	]
+	# - the list must not be empty: i.e. avoid counts as range(1, 1)
+	# - the elements must not be duplicated, hence the use of set()
+	pids = list(
+	    set([
+	        R.randrange(0, process_count)
+	        for s in range(1,
+	                       R.randrange(1, process_count) + 1)
+	    ]))
 	# new random sizes for processes
 	final_sizes = [
 	    R.randrange(1, int(process_proportion * memory_size))
