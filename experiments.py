@@ -5,23 +5,19 @@ Experiments script for Memory Allocation Simulator
 """
 import ma_sim as M
 import random as R
-# from colorama import init, Fore, Style
 
-# init()
-
-experiment_count = 100
-process_count = 10
-memory_size = 1000
-process_proportion = 0.2
-prints = False
 separator = "\n=========================="
 
 
-def runner():
-	global process_count
-	global memory_size
-	global process_proportion
-	global prints
+def runner(process_count=10,
+           memory_size=1000,
+           process_proportion=0.2,
+           prints=False):
+	"""
+	1. Randomly generates 3 lists: initial process sizes, pids, final process sizes.
+	2. Uses the lists for each algorithm to allocate memory.
+	3. Displays the stats.
+	"""
 	global separator
 
 	# random sizes for processes
@@ -105,11 +101,61 @@ def print_stats(data):
 	print(f"  first fit: {result[0]:.4f}")
 	print(f"  best fit:  {result[1]:.4f}")
 	print(f"  worst fit: {result[2]:.4f}")
+	return result
 
 
+def do_experiments(experiment_count=100,
+                   process_count=10,
+                   memory_size=1000,
+                   process_proportion=0.2,
+                   prints=False):
+	"""
+	Executes runner() for a given number of iterations with custom configuration.
+	Displays the cumulative results.
+	"""
+	global separator
+
+	results = []
+	for i in range(1, experiment_count + 1):
+		print("Experiment #", i, separator)
+		results.append(
+		    runner(process_count=process_count,
+		           memory_size=memory_size,
+		           process_proportion=process_proportion,
+		           prints=prints))
+
+	return print_stats(results)
+
+
+# tests
 results = []
-for i in range(1, experiment_count + 1):
-	print("Experiment #", i, separator)
-	results.append(runner())
 
-print_stats(results)
+print("Test 1: using unbound process sizes")
+results.append(do_experiments(process_proportion=1))
+
+print("Test 2: using bound process sizes (max size 10% of memory)")
+results.append(do_experiments(process_proportion=0.1))
+
+print("Test 3: using bound process sizes (max size 25% of memory)")
+results.append(do_experiments(process_proportion=0.25))
+
+print("Test 4: using bound process sizes (max size 50% of memory)")
+results.append(do_experiments(process_proportion=0.5))
+
+# print final stats
+print("Overall success rates:")
+print("\tff\tbf\twf")
+for i in range(len(results)):
+	print(
+	    f"Test {i+1}\t{results[i][0]:.2f}\t{results[i][1]:.2f}\t{results[i][2]:.2f}"
+	)
+
+# append results to a file
+with open("output.txt", "a") as output:
+	output.write("Overall success rates:\n")
+	output.write("\t\tff\t\tbf\t\twf\n")
+	for i in range(len(results)):
+		output.write(
+		    f"Test {i+1}\t{results[i][0]:.2f}\t{results[i][1]:.2f}\t{results[i][2]:.2f}\n"
+		)
+	output.write(separator)
