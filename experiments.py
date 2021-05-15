@@ -2,6 +2,8 @@
 Experiments script for Memory Allocation Simulator
 @author alin-c
 @link https://github.com/ucv-cs/Proiectarea-sistemelor-de-operare
+@usage
+py -i experiments.py > output.txt
 """
 import ma_sim as M
 import random as R
@@ -11,7 +13,8 @@ separator = "\n=========================="
 
 def runner(process_count=10,
            memory_size=1000,
-           process_proportion=0.2,
+           process_min_size=1,
+           process_max_size=100,
            prints=False):
 	"""
 	1. Randomly generates 3 lists: initial process sizes, pids, final process sizes.
@@ -21,23 +24,24 @@ def runner(process_count=10,
 	global separator
 
 	# random sizes for processes
+	# generate a list of process_count items with random sizes between 1 and a bounded integer
 	initial_sizes = [
-	    R.randrange(1, int(process_proportion * memory_size))
+	    R.randrange(process_min_size, process_max_size)
 	    for s in range(process_count)
 	]
 	# pids to be removed
-	# - the list must not be empty: i.e. avoid counts as range(1, 1)
-	# - the elements must not be duplicated, hence the use of set()
-	pids = list(
-	    set([
-	        R.randrange(0, process_count)
-	        for s in range(1,
-	                       R.randrange(1, process_count) + 1)
-	    ]))
+	# - the elements must not be duplicated
+	# - the pids count must be 1/2 of the process_count
+	pids = []
+	while len(pids) != int(process_count / 2):
+		p = R.randrange(0, process_count)
+		if p not in pids:
+			pids.append(p)
 	# new random sizes for processes
+	# try to replace the removed processes
 	final_sizes = [
-	    R.randrange(1, int(process_proportion * memory_size))
-	    for s in range(process_count)
+	    R.randrange(process_min_size, process_max_size)
+	    for s in range(int(process_count / 2))
 	]
 
 	print("Sizes to be added:  ", initial_sizes)
@@ -107,7 +111,8 @@ def print_stats(data):
 def do_experiments(experiment_count=100,
                    process_count=10,
                    memory_size=1000,
-                   process_proportion=0.2,
+                   process_min_size=1,
+                   process_max_size=100,
                    prints=False):
 	"""
 	Executes runner() for a given number of iterations with custom configuration.
@@ -121,7 +126,8 @@ def do_experiments(experiment_count=100,
 		results.append(
 		    runner(process_count=process_count,
 		           memory_size=memory_size,
-		           process_proportion=process_proportion,
+		           process_min_size=process_min_size,
+		           process_max_size=process_max_size,
 		           prints=prints))
 
 	return print_stats(results)
@@ -130,32 +136,24 @@ def do_experiments(experiment_count=100,
 # tests
 results = []
 
-print("Test 1: using unbound process sizes")
-results.append(do_experiments(process_proportion=1))
+print("\nTest 1: using unbound but not 0 process sizes")
+results.append(do_experiments(process_max_size=1000))
 
-print("Test 2: using bound process sizes (max size 10% of memory)")
-results.append(do_experiments(process_proportion=0.1))
+print(
+    "\nTest 2: using bound process sizes (max size 100), but process count of 15"
+)
+results.append(do_experiments(process_max_size=100, process_count=15))
 
-print("Test 3: using bound process sizes (max size 25% of memory)")
-results.append(do_experiments(process_proportion=0.25))
+print("\nTest 3: using bound process sizes (min size 100, max size 300)")
+results.append(do_experiments(process_min_size=100, process_max_size=300))
 
-print("Test 4: using bound process sizes (max size 50% of memory)")
-results.append(do_experiments(process_proportion=0.5))
+print("\nTest 4: using bound process sizes (min size 150, max size 500)")
+results.append(do_experiments(process_min_size=150, process_max_size=500))
 
 # print final stats
-print("Overall success rates:")
+print("\nOverall success rates:")
 print("\tff\tbf\twf")
 for i in range(len(results)):
 	print(
-	    f"Test {i+1}\t{results[i][0]:.2f}\t{results[i][1]:.2f}\t{results[i][2]:.2f}"
+	    f"Test {i+1}\t{results[i][0]:>6.2f}\t{results[i][1]:>6.2f}\t{results[i][2]:>6.2f}"
 	)
-
-# append results to a file
-with open("output.txt", "a") as output:
-	output.write("Overall success rates:\n")
-	output.write("\t\tff\t\tbf\t\twf\n")
-	for i in range(len(results)):
-		output.write(
-		    f"Test {i+1}\t{results[i][0]:.2f}\t{results[i][1]:.2f}\t{results[i][2]:.2f}\n"
-		)
-	output.write(separator)
