@@ -12,7 +12,7 @@ The output is a timeline showing the order of execution and stats.
 Processes which run their entire burst time are terminated and removed from
 the ready queue.
 
-The CPU interrupts the current process execution on 2 events:
+Current process execution interrupts on 2 events:
 - the quantum is elapsed;
 - the remaining time (or burst - executed) is 0.
 
@@ -48,13 +48,13 @@ class Process:
 
 
 class Scheduler:
-	def __init__(self):
+	def __init__(self, quantum=20):
 		# sublists / subqueues are priority class queues:
 		# [0] = HIGH,
 		# [1] = NORMAL,
 		# [2] = LOW
 		self.ready_queue = [[], [], []]
-		self.quantum = 30  # "ms"
+		self.quantum = quantum  # "ms"
 		self.timer = 0  # "ms"
 		self.counter = 0  # process counter used for pid
 		self.execution_log = []  # will hold tuples gathered at each interrupt
@@ -154,26 +154,34 @@ class Scheduler:
 		"""
 		# timelines chart
 		print("Timelines and context switches:")
-		timelines = {}  # dictionary: {pid: [(start, length), ...]}
+		timelines = {}  # dictionary: {pid: [(start, length, priority), ...]}
 		for p in range(self.counter):
 			timelines[p] = []
 
-		# add the values: [(start, length), ...]
+		# add the values: [(start, length, priority), ...]
 		for i in self.execution_log:
-			timelines[i[0]].append((i[5], i[6]))
+			timelines[i[0]].append((i[5], i[6], i[1]))
+
+		# hold burst and waiting times per process:
+		# [(pid, priority, burst, waiting, response)]
+		stats = []
 
 		# output timelines to file
 		with open("timelines.txt", "w") as file:
 
 			# build and print each timeline
 			for t in range(self.counter):
-				line = f"{t}: "
+				priority = timelines[t][0][2]
+				line = f"{t} [{priority}]: "
 				s_0 = 0
 				s_1 = 0
 				for s in timelines[t]:
-					line += '.' * (s[0] - s_0 - s_1) + 'o' * s[1]
+					line += '.' * (s[0] - s_0 - s_1) + 'X' * s[1]
 					s_0 = s[0]
 					s_1 = s[1]
+				# count . and X and fill the process stats
+				stats.append((t, priority, line.count('X'), line.count('.'),
+				              timelines[t][0][0]))
 				print(line)
 				file.write(line + "\n")
 
@@ -184,6 +192,26 @@ class Scheduler:
 		print("---------------------------------------------------------")
 		for r in self.execution_log:
 			print(f"{r[0]:>3}\t{r[1]:>8}\t{r[2]:>9}\t{r[3]:>5}\t{r[4]:>9}")
+		print(
+		    "\nProcess stats:\npid\tpriority\tburst\twaiting\t\tresponse\tturnaround"
+		)
+		print(
+		    "--------------------------------------------------------------------------"
+		)
+		total_response = 0
+		total_waiting = 0
+		total_turnaround = 0
+		count = len(stats)
+		for s in stats:
+			print(
+			    f"{s[0]:>3}\t{s[1]:>8}\t{s[2]:>5}\t{s[3]:>7}\t\t{s[4]:>8}\t{s[2]+s[3]:>10}"
+			)
+			total_response += s[4]
+			total_waiting += s[3]
+			total_turnaround += s[2] + s[3]
+		print(f"Average response time:   {total_response/count:.2f}")
+		print(f"Average waiting time:    {total_waiting/count:.2f}")
+		print(f"Average turnaround time: {total_turnaround/count:.2f}")
 
 
 if __name__ == "__main__":
@@ -194,4 +222,5 @@ if __name__ == "__main__":
 	s.schedule_process(Priority.HIGH, 47)
 	s.schedule_process(Priority.NORMAL, 22)
 	s.schedule_process(Priority.LOW, 61)
+	s.schedule_process(Priority.NORMAL, 78)
 	s.execute()
