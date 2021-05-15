@@ -1,6 +1,6 @@
 """
 Process Scheduler Simulator
-@version 1.2
+@version 1.3
 @author alin-c
 @link https://github.com/ucv-cs/Proiectarea-sistemelor-de-operare
 
@@ -66,6 +66,10 @@ class Scheduler:
 		self.ready_queue[process_priority.value].append(
 		    Process(self.counter, process_priority, process_burst))
 		self.counter += 1
+
+	# operator overload for the lazy
+	def __add__(self, pd):
+		self.schedule_process(pd[0], pd[1])
 
 	def terminate_process(self, pid, process_priority):
 		"""
@@ -159,11 +163,11 @@ class Scheduler:
 			timelines[p] = []
 
 		# add the values: [(start, length, priority), ...]
+		# FIXME: priority is currently redundant, but it may be used for color printing
 		for i in self.execution_log:
 			timelines[i[0]].append((i[5], i[6], i[1]))
 
-		# hold burst and waiting times per process:
-		# [(pid, priority, burst, waiting, response)]
+		# hold process stats: [(pid, priority, burst, waiting, response)]
 		stats = []
 
 		# output timelines to file
@@ -213,6 +217,11 @@ class Scheduler:
 		print(f"Average waiting time:    {total_waiting/count:.2f}")
 		print(f"Average turnaround time: {total_turnaround/count:.2f}")
 
+
+# aliases for the lazy
+L = Priority.LOW
+N = Priority.NORMAL
+H = Priority.HIGH
 
 if __name__ == "__main__":
 	s = Scheduler()
