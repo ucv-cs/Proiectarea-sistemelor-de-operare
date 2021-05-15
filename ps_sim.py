@@ -20,10 +20,13 @@ At each interrupt a scheduling decision is made: basically, lookup the entire
 ready queue for the next highest priority process and run it until an interrupt
 (from the 2 mentioned above).
 
-After all processes terminate, the output is displayed.
+After all processes terminate, the output is displayed. Also, the timelines are
+output to a text file (to allow display of potentially long lines).
 
 @usage
 py -i ps_sim.py
+
+outputs to file: timelines.txt
 """
 
 import random as R
@@ -47,11 +50,11 @@ class Process:
 class Scheduler:
 	def __init__(self):
 		# sublists / subqueues are priority class queues:
-		# 0 -> HIGH,
-		# 1 -> NORMAL,
-		# 2 -> LOW
+		# [0] = HIGH,
+		# [1] = NORMAL,
+		# [2] = LOW
 		self.ready_queue = [[], [], []]
-		self.quantum = 10  # "ms"
+		self.quantum = 30  # "ms"
 		self.timer = 0  # "ms"
 		self.counter = 0  # process counter used for pid
 		self.execution_log = []  # will hold tuples gathered at each interrupt
@@ -150,25 +153,34 @@ class Scheduler:
 		Displays the execution log in a friendly manner.
 		"""
 		# timelines chart
-		timelines = {}
+		print("Timelines and context switches:")
+		timelines = {}  # dictionary: {pid: [(start, length), ...]}
 		for p in range(self.counter):
 			timelines[p] = []
 
+		# add the values: [(start, length), ...]
 		for i in self.execution_log:
 			timelines[i[0]].append((i[5], i[6]))
 
-		for t in range(self.counter):
-			line = f"{t}: "
-			s_0 = 0
-			s_1 = 0
-			for s in timelines[t]:
-				line += '.' * (s[0] - s_0 - s_1) + 'o' * s[1]
-				s_0 = s[0]
-				s_1 = s[1]
-			print(line)
+		# output timelines to file
+		with open("timelines.txt", "w") as file:
+
+			# build and print each timeline
+			for t in range(self.counter):
+				line = f"{t}: "
+				s_0 = 0
+				s_1 = 0
+				for s in timelines[t]:
+					line += '.' * (s[0] - s_0 - s_1) + 'o' * s[1]
+					s_0 = s[0]
+					s_1 = s[1]
+				print(line)
+				file.write(line + "\n")
 
 		# stats
-		print("pid\tpriority\tinterrupt\tburst\tremaining")
+		print(
+		    "\nExecution sequence:\npid\tpriority\tinterrupt\tburst\tremaining"
+		)
 		print("---------------------------------------------------------")
 		for r in self.execution_log:
 			print(f"{r[0]:>3}\t{r[1]:>8}\t{r[2]:>9}\t{r[3]:>5}\t{r[4]:>9}")
@@ -176,8 +188,10 @@ class Scheduler:
 
 if __name__ == "__main__":
 	s = Scheduler()
-	s.schedule_process(Priority.NORMAL, 12)
-	s.schedule_process(Priority.HIGH, 15)
+	s.schedule_process(Priority.LOW, 59)
+	s.schedule_process(Priority.NORMAL, 32)
+	s.schedule_process(Priority.HIGH, 35)
+	s.schedule_process(Priority.HIGH, 47)
 	s.schedule_process(Priority.NORMAL, 22)
-	s.schedule_process(Priority.LOW, 13)
+	s.schedule_process(Priority.LOW, 61)
 	s.execute()
