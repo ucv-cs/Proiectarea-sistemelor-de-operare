@@ -40,9 +40,14 @@ class Priority(Enum):
 
 
 class Process:
-	def __init__(self, pid=0, priority=Priority.NORMAL, burst_time=1):
+	def __init__(self,
+	             pid=0,
+	             priority=Priority.NORMAL,
+	             arrival_time=0,
+	             burst_time=1):
 		self.pid = pid
 		self.priority = priority
+		self.arrival_time = arrival_time
 		self.burst_time = burst_time
 		self.executed_time = 0
 
@@ -59,12 +64,32 @@ class Scheduler:
 		self.counter = 0  # process counter used for pid
 		self.execution_log = []  # will hold tuples gathered at each interrupt
 
-	def schedule_process(self, process_priority, process_burst):
+	def schedule_process(self,
+	                     process_priority=Priority.NORMAL,
+	                     process_arrival=0,
+	                     process_burst=1):
 		"""
 		Adds a new process to the correct priority queue.
 		"""
-		self.ready_queue[process_priority.value].append(
-		    Process(self.counter, process_priority, process_burst))
+		process = Process(self.counter, process_priority, process_arrival,
+		                  process_burst)
+		queue = self.ready_queue[process_priority.value]
+		if len(queue) == 0:  # case 1: empty list
+			queue.append(process)
+			self.counter += 1
+			return
+		# case 2: single or multiple element list
+		# search backwards to cover the case when there already exists a process
+		# with the same arrival time
+		for i in range(len(queue) - 1, 0, -1):
+			# the list is already sorted by arrival time
+			# so it only needs to find the first greater arrival time and put
+			# the new process in front of it
+			if queue[i].arrival_time <= process_arrival:
+				queue.insert(i + 1, process)
+				break
+			queue.insert(i, process)
+			break
 		self.counter += 1
 
 	# operator overload for the lazy
@@ -136,11 +161,14 @@ class Scheduler:
 		priority subqueue.
 		If nothing is found, return None (used to stop overall execution).
 		"""
-		if len(self.ready_queue[0]) > 0:
+		if len(self.ready_queue[0]
+		       ) > 0 and self.ready_queue[0][0].arrival_time <= self.timer:
 			return self.ready_queue[0][0]
-		elif len(self.ready_queue[1]) > 0:
+		elif len(self.ready_queue[1]
+		         ) > 0 and self.ready_queue[1][0].arrival_time <= self.timer:
 			return self.ready_queue[1][0]
-		elif len(self.ready_queue[2]) > 0:
+		elif len(self.ready_queue[2]
+		         ) > 0 and self.ready_queue[2][0].arrival_time <= self.timer:
 			return self.ready_queue[2][0]
 		return None
 
@@ -225,11 +253,11 @@ H = Priority.HIGH
 
 if __name__ == "__main__":
 	s = Scheduler()
-	s.schedule_process(Priority.LOW, 59)
-	s.schedule_process(Priority.NORMAL, 32)
-	s.schedule_process(Priority.HIGH, 35)
-	s.schedule_process(Priority.HIGH, 47)
-	s.schedule_process(Priority.NORMAL, 22)
-	s.schedule_process(Priority.LOW, 61)
-	s.schedule_process(Priority.NORMAL, 78)
+	s.schedule_process(Priority.LOW, 0, 59)
+	s.schedule_process(Priority.NORMAL, 5, 32)
+	s.schedule_process(Priority.HIGH, 27, 35)
+	s.schedule_process(Priority.HIGH, 15, 47)
+	s.schedule_process(Priority.NORMAL, 5, 22)
+	s.schedule_process(Priority.LOW, 0, 61)
+	s.schedule_process(Priority.NORMAL, 23, 78)
 	s.execute()
