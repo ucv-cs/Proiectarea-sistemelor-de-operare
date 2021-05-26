@@ -224,12 +224,11 @@ N = Priority.NORMAL
 H = Priority.HIGH
 
 if __name__ == "__main__":
-	s = Scheduler(25)
+	s = Scheduler(10)
 	s + (H, 35)
 	s + (H, 47)
 	s + (N, 24)
-	s + (N, 40)
-	s + (N, 78)
-	s + (L, 59)
-	s + (L, 65)
+	s + (N, 38)
+	s + (L, 45)
+	s + (L, 55)
 	s.execute()
